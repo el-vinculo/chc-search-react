@@ -1,0 +1,38 @@
+.loading-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  /* background: rgba(255,255,255,0.4); */
+  z-index: 9000; // Should always be top-most element
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .loader {
+    width: 6rem;
+    height: 6rem;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 8px #ccc;
+    border-radius: 50%;
+  }
+
+  img {
+    width: 4rem;
+    height: 4rem;
+    animation: infinite-spinning 2s linear infinite;
+  }
+
+  @keyframes infinite-spinning {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+}

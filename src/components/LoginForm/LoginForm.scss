@@ -1,0 +1,19 @@
+.user-login-form {
+  .MuiDialogContent-root {
+    padding: 8px 12px;
+  }
+
+  .MuiDialog-paper {
+    margin: 16px;
+  }
+
+  .login-form {
+    width: 266px;
+    margin: 0 auto;
+
+    .login-btn {
+      margin: 16px 8px;
+      padding-bottom: 24px;
+    }
+  }
+}

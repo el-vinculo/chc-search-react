@@ -1,0 +1,79 @@
+.search-results-container {
+  display: flex;
+
+  .records-summary {
+    height: calc(100vh - 265px);
+    overflow-y: scroll;
+    width: 50%;
+    padding-right: 1rem;
+    border-right: 1px solid #ddd;
+
+    .record-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #ddd;
+
+      &.active {
+        background-color: lighten(#009688, 60%);
+      }
+
+      .org-name {
+
+      }
+
+      .program-name {
+
+      }
+
+      .detail-btn {
+        flex-shrink: 0;
+        margin-left: 1rem;
+      }
+    }
+  }
+
+  .records-detail {
+    height: calc(100vh - 265px);
+    overflow-y: scroll;
+    width: 50%;
+    padding: 0 1rem;
+
+    h3 {
+      margin-bottom: -0.25rem;
+      margin-top: 1.5rem;
+    }
+
+    .links-wrap {
+      margin-bottom: -0.5rem;
+
+      > a {
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+      }
+    }
+
+    .address-wrap {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      margin-top: 1rem;
+      padding: 1rem;
+      margin-bottom: 1rem;
+
+      > div {
+        margin-bottom: .25rem;
+        display: flex;
+        align-items: center;
+
+        svg {
+          margin-right: 0.5rem;
+        }
+      }
+
+      .loc-name {
+        margin-bottom: 0.75rem;
+      }
+    }
+  }
+}

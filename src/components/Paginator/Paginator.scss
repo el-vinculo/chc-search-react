@@ -1,0 +1,23 @@
+.paginator-wrap {
+  .MuiPagination-ul {
+    justify-content: center;
+  }
+
+  .paginationLG {
+    width: 430px;
+    margin: 40px auto 24px;
+    @media screen and (max-width: 599px) {
+      display: none;
+    }
+  }
+  .paginationSM {
+    width: 200px;
+    margin: 40px auto 24px;
+    @media screen and (min-width: 600px) {
+      display: none;
+    }
+  }
+  .hidden {
+    display: none;
+  }
+}
