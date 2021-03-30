@@ -26,6 +26,12 @@
       flex-shrink: 0;
     }
 
+    &.static {
+      .filter-category-join {
+        margin-left: 24px;
+      }
+    }
+
     .filter-label {
       font-weight: 600;
       font-size: 16px;
@@ -67,16 +73,16 @@
       }
     }
 
-    .filter-text-value {
+    .filter-text-value, .filter-switch {
       margin-bottom: 1.5rem;
     }
   }
 
   .add-filter-group {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
-    margin-bottom: 0.75rem;
+    /* margin-bottom: 0.75rem; */
 
     .filter-actions-wrap {
       display: flex;
@@ -89,7 +95,22 @@
 
     .search-btn-wrap {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
+
+      .query-meta {
+        display: flex;
+        flex-direction: column;
+
+        .MuiFormControlLabel-root {
+          margin-left: 0rem;
+          margin-top: 0.25rem;
+        }
+
+        .MuiTypography-body1 {
+          font-size: 14px;
+          padding-left: 0.25rem;
+        }
+      }
 
       button {
         margin-left: 1rem;

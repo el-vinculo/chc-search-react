@@ -10,8 +10,10 @@ import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
 import TextField from '@material-ui/core/TextField';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import CircularProgress from '@material-ui/core/CircularProgress';
+import Switch from '@material-ui/core/Switch';
 import AddCircleOutlineIcon from '@material-ui/icons/AddCircleOutline';
 import RemoveCircleIcon from '@material-ui/icons/RemoveCircle';
 import HighlightOffIcon from '@material-ui/icons/HighlightOff';
@@ -26,6 +28,8 @@ export default function QueryBuilder({
   onSubmit,
   joinsAllowedBetweenFilters,
   queryName,
+  // staticConfig = [],
+  saveQueryAsGlobal,
 }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const [appliedFilters, setAppliedFilters] = useState([]);
@@ -34,6 +38,8 @@ export default function QueryBuilder({
   const [dropdownOptions, setDropdownOptions] = useState([]);
   const [dropdownInput, setDropdownInput] = useState('');
   const [errors, setErrors] = useState({});
+  // const [qbStaticConfig, setQbStaticConfig] = useState(staticConfig);
+
   /* const [searchQueryName, setSearchQueryName] = useState(
     queryName && queryName.defaultValue,
   ); */
@@ -67,7 +73,7 @@ export default function QueryBuilder({
                 connector: '',
               },
             ]
-          : '',
+          : category.value,
     }));
     handleAddFilterCategoryClose();
   };
@@ -209,38 +215,81 @@ export default function QueryBuilder({
     const validationErrors = {};
     const requestFilters = {};
     Object.keys(queryJson).forEach((filterKey) => {
-      if (Array.isArray(queryJson[filterKey])) {
-        if (queryJson[filterKey].length > 0) {
-          requestFilters[filterKey] = [];
-        }
-        queryJson[filterKey].forEach((filterVal, i) => {
-          if (_isEmpty(filterVal.value)) {
-            validationErrors[`${filterKey}|${filterVal.id}`] = true;
+      const filterConfig = appliedFilters.find(
+        (f) => f.filterKey === filterKey,
+      );
+      if (!filterConfig.parentKey) {
+        if (Array.isArray(queryJson[filterKey])) {
+          if (queryJson[filterKey].length > 0) {
+            requestFilters[filterKey] = [];
           }
-          const filterValObj = _pick(filterVal, [
-            'value',
-            'modifier',
-            'connector',
-          ]);
-          if (i === 0) {
-            filterValObj.modifier = 'False';
-            filterValObj.connector = '';
+          queryJson[filterKey].forEach((filterVal, i) => {
+            if (_isEmpty(filterVal.value)) {
+              validationErrors[`${filterKey}|${filterVal.id}`] = true;
+            }
+            const filterValObj = _pick(filterVal, [
+              'value',
+              'modifier',
+              'connector',
+            ]);
+            if (i === 0) {
+              filterValObj.modifier = 'False';
+              filterValObj.connector = '';
+            }
+            requestFilters[filterKey].push(filterValObj);
+          });
+        } else {
+          if (_isEmpty(queryJson[filterKey])) {
+            validationErrors[filterKey] = true;
           }
-          requestFilters[filterKey].push(filterValObj);
-        });
-      } else {
-        if (_isEmpty(queryJson[filterKey])) {
-          validationErrors[filterKey] = true;
+          requestFilters[filterKey] = queryJson[filterKey];
         }
-        requestFilters[filterKey] = queryJson[filterKey];
       }
     });
+
+    Object.keys(queryJson).forEach((filterKey) => {
+      const filterConfig = appliedFilters.find(
+        (f) => f.filterKey === filterKey,
+      );
+      if (filterConfig.parentKey) {
+        if (!requestFilters[filterConfig.parentKey]) {
+          requestFilters[filterConfig.parentKey] = [];
+          requestFilters[filterConfig.parentKey].push({
+            value: filterConfig.filterLabel,
+            modifier: queryJson[filterKey] ? MODIFIER.DEFAULT : MODIFIER.NOT,
+            connector: '',
+          });
+        } else {
+          requestFilters[filterConfig.parentKey].push({
+            value: filterConfig.filterLabel,
+            modifier: queryJson[filterKey] ? MODIFIER.DEFAULT : MODIFIER.NOT,
+            connector: AND,
+          });
+        }
+      }
+    });
+
+    // qbStaticConfig.forEach((filterConfig) => {
+    //   if (!requestFilters[filterConfig.filterKey]) {
+    //     requestFilters[filterConfig.filterKey] = [];
+    //     requestFilters[filterConfig.filterKey].push({
+    //       value: filterConfig.filterLabel,
+    //       modifier: filterConfig.value ? MODIFIER.DEFAULT : MODIFIER.NOT,
+    //       connector: '',
+    //     });
+    //   } else {
+    //     requestFilters[filterConfig.filterKey].push({
+    //       value: filterConfig.filterLabel,
+    //       modifier: filterConfig.value ? MODIFIER.DEFAULT : MODIFIER.NOT,
+    //       connector: AND,
+    //     });
+    //   }
+    // });
     // if (queryName && _isEmpty(searchQueryName)) {
     if (queryName && _isEmpty(queryName.defaultValue)) {
       validationErrors[queryName.key] = true;
     } else {
-      // TODO: Uncomment when search query name is supported by the API
-      // requestFilters[queryName.key] = searchQueryName;
+      // requestFilters[queryName.key] = queryName.defaultValue;
     }
     if (_isEmpty(validationErrors)) {
       onSubmit(requestFilters);
@@ -439,8 +488,46 @@ export default function QueryBuilder({
               />
             </div>
           )}
+          {filter.filterType === FILTER_TYPE.SWITCH && (
+            <div className="filter-switch">
+              <Switch
+                checked={queryJson[filter.filterKey].value}
+                onChange={(e) => {
+                  setQueryJson((prev) => ({
+                    ...prev,
+                    [filter.filterKey]: e.target.checked,
+                  }));
+                }}
+                color="primary"
+                name={filter.filterKey}
+                inputProps={{ 'aria-label': 'primary checkbox' }}
+              />
+            </div>
+          )}
         </div>
       ))}
+      {/* !_isEmpty(queryJson) &&
+        qbStaticConfig.map((staticFilter) => (
+          <div className="filter-group static" key={staticFilter.filterLabel}>
+            <div className="filter-category-join">
+              {joinsAllowedBetweenFilters.length === 1 &&
+                joinsAllowedBetweenFilters[0]}
+            </div>
+            <div className="filter-label">{staticFilter.filterLabel}</div>
+            {staticFilter.filterType === FILTER_TYPE.SWITCH && (
+              <div className="filter-switch">
+                <Switch
+                  checked={staticFilter.value}
+                  onChange={(e) => null}
+                  // handleStaticFilterToggle(e.target.name, e.target.checked)
+                  color="primary"
+                  name={staticFilter.filterLabel}
+                  inputProps={{ 'aria-label': 'primary checkbox' }}
+                />
+              </div>
+            )}
+          </div>
+        )) */}
       <div className="add-filter-group">
         <div className="filter-actions-wrap">
           <Button
@@ -505,44 +592,60 @@ export default function QueryBuilder({
           )}
         </div>
         <div className="search-btn-wrap">
-          {queryName && !_isEmpty(queryJson) && (
-            <TextField
-              id="query-name"
-              label="Query Name"
-              variant="outlined"
-              size="small"
-              style={{
-                width: 300,
-              }}
-              error={errors[queryName.key]}
-              helperText={
-                errors[queryName.key] && 'Please give your query a name'
-              }
-              // defaultValue={searchQueryName}
-              value={queryName.defaultValue}
-              onChange={(e) => {
-                // setSearchQueryName(e.target.value);
-                if (queryName && queryName.onChange) {
-                  queryName.onChange(e.target.value);
+          <div className="query-meta">
+            {queryName && (
+              <TextField
+                id="query-name"
+                label="Query Name"
+                variant="outlined"
+                size="small"
+                style={{
+                  width: 300,
+                }}
+                error={errors[queryName.key]}
+                helperText={
+                  errors[queryName.key] && 'Please give your query a name'
                 }
-                setErrors((prev) => ({
-                  ...prev,
-                  [queryName.key]: false,
-                }));
-              }}
-            />
-          )}
-          {!_isEmpty(queryJson) && (
-            <Button
-              variant="contained"
-              color="primary"
-              // className={classes.button}
-              onClick={handleQuerySearch}
-              startIcon={<SearchIcon />}
-            >
-              Search
-            </Button>
-          )}
+                // defaultValue={searchQueryName}
+                value={queryName.defaultValue}
+                onChange={(e) => {
+                  // setSearchQueryName(e.target.value);
+                  if (queryName && queryName.onChange) {
+                    queryName.onChange(e.target.value);
+                  }
+                  setErrors((prev) => ({
+                    ...prev,
+                    [queryName.key]: false,
+                  }));
+                }}
+              />
+            )}
+            {saveQueryAsGlobal && (
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={saveQueryAsGlobal.value}
+                    onChange={(e) =>
+                      saveQueryAsGlobal.onChange(e.target.checked)
+                    }
+                    name="saveQueryAsGlobal"
+                    color="primary"
+                    size="small"
+                  />
+                }
+                label="Save Globally"
+              />
+            )}
+          </div>
+          <Button
+            variant="contained"
+            color="primary"
+            // className={classes.button}
+            onClick={handleQuerySearch}
+            startIcon={<SearchIcon />}
+          >
+            Search
+          </Button>
         </div>
       </div>
     </div>
@@ -556,6 +659,12 @@ QueryBuilder.propTypes = {
   queryName: PropTypes.shape({
     key: PropTypes.string.isRequired,
     defaultValue: PropTypes.string.isRequired,
-    onChange: PropTypes.func,
+    onChange: PropTypes.func.isRequired,
   }),
+  saveQueryAsGlobal: PropTypes.shape({
+    key: PropTypes.string.isRequired,
+    value: PropTypes.bool.isRequired,
+    onChange: PropTypes.func.isRequired,
+  }),
+  // staticConfig: PropTypes.array,
 };

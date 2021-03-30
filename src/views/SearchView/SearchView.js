@@ -68,6 +68,7 @@ export default function SearchView() {
   const [expandedPanel, setExpandedPanel] = useState(
     ACCORDION_PANEL.QUERY_BUILDER,
   );
+  const [saveQueryAsGlobal, setSaveQueryAsGlobal] = useState(false);
 
   const qbConfig = [
     {
@@ -126,12 +127,21 @@ export default function SearchView() {
       filterLabel: 'Program',
       filterType: FILTER_TYPE.TEXT,
       multipleValuesAllowed: false,
+      value: '',
     },
     {
       filterKey: 'name',
       filterLabel: 'Organization',
       filterType: FILTER_TYPE.TEXT,
       multipleValuesAllowed: false,
+      value: '',
+    },
+    {
+      filterKey: 'List_Guides',
+      parentKey: 'ServiceGroupsContainer',
+      filterLabel: 'Lists & Guides',
+      filterType: FILTER_TYPE.SWITCH,
+      value: false,
     },
   ];
 
@@ -183,6 +193,8 @@ export default function SearchView() {
         endpoint: API.SEARCH_DATA,
         data: {
           email: viewerSession.email,
+          query_name: queryName,
+          global_query: saveQueryAsGlobal,
           search_params: filters,
         },
       });
@@ -254,11 +266,17 @@ export default function SearchView() {
               joinsAllowedBetweenFilters={[AND]}
               onSubmit={(qbObj) => searchData(qbObj)}
               queryName={{
-                key: 'queryName',
+                key: 'query_name',
                 // defaultValue: uniqueQueryName.current,
                 defaultValue: queryName,
                 onChange: (val) => setQueryName(val),
               }}
+              saveQueryAsGlobal={{
+                key: 'global_query',
+                value: saveQueryAsGlobal,
+                onChange: (val) => setSaveQueryAsGlobal(val),
+              }}
+              // staticConfig={qbStaticConfig}
               // value={preloadedVal}
             />
           </div>
