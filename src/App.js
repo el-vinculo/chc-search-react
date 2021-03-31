@@ -2,6 +2,7 @@ import React from 'react';
 import { createMuiTheme } from '@material-ui/core/styles';
 import { ThemeProvider } from '@material-ui/styles';
 import teal from '@material-ui/core/colors/teal';
+import red from '@material-ui/core/colors/red';
 import { RecoilRoot } from 'recoil';
 import { BrowserRouter as Router } from 'react-router-dom';
 import BaseLayout from './components/BaseLayout';
@@ -14,10 +15,11 @@ function App() {
       primary: {
         main: teal[500],
       },
-      // secondary: {
-      //   main: confObj.current.theme.secondaryColor,
-      //   contrastText: confObj.current.theme.contrastText,
-      // },
+      secondary: {
+        main: red[500],
+        //   main: confObj.current.theme.secondaryColor,
+        //   contrastText: confObj.current.theme.contrastText,
+      },
     },
     // overrides: {
     //   MuiPaper: {

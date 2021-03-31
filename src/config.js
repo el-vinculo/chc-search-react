@@ -9,4 +9,5 @@ export const API = {
   SERVICE_GROUP_OPTONS: 'service_group_list',
   SERVICE_TAG_OPTONS: 'service_tag_list',
   SEARCH_DATA: 'advanced_search',
+  FETCH_SAVED_QUERIES: 'favorite_query_list',
 };
