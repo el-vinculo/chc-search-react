@@ -11,4 +11,5 @@ export const FILTER_TYPE = {
   TEXT: 'text',
   DROPDOWN: 'dropdown',
   SWITCH: 'switch',
+  KEY_VALUE: 'key_value',
 };

@@ -30,6 +30,8 @@ export default function QueryBuilder({
   queryName,
   // staticConfig = [],
   saveQueryAsGlobal,
+  onReset,
+  defaultQueryJson,
 }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const [appliedFilters, setAppliedFilters] = useState([]);
@@ -50,6 +52,22 @@ export default function QueryBuilder({
 
   const dropdownLoading =
     openDropdown && dropdownOptions && dropdownOptions.length === 0;
+
+  useEffect(() => {
+    if (defaultQueryJson) {
+      setQueryJson(defaultQueryJson);
+      const filterKeys = Object.keys(defaultQueryJson);
+      setAppliedFilters(
+        config.filter((category) => filterKeys.includes(category.filterKey)),
+      );
+      setErrors({});
+    } else {
+      setQueryJson({});
+      setAppliedFilters([]);
+      setErrors({});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultQueryJson]);
 
   const handleAddFilterCategoryClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -353,19 +371,24 @@ export default function QueryBuilder({
                     </div>
                   )}
                   <div className="filter-value">
-                    <div
-                      className="filter-value-remove"
-                      onClick={() =>
-                        removeFilterValue(filter.filterKey, val.id)
-                      }
-                      role="presentation"
-                    >
-                      <HighlightOffIcon color="error" />
-                    </div>
+                    {filter.multipleValuesAllowed && (
+                      <div
+                        className="filter-value-remove"
+                        onClick={() =>
+                          removeFilterValue(filter.filterKey, val.id)
+                        }
+                        role="presentation"
+                      >
+                        <HighlightOffIcon color="error" />
+                      </div>
+                    )}
                     <Autocomplete
                       id={`${filter.filterKey}|${val.id}`}
                       style={{ width: 200 }}
                       size="small"
+                      // autoComplete
+                      autoHighlight
+                      autoSelect
                       open={openDropdown === `${filter.filterKey}|${val.id}`}
                       onOpen={() => {
                         setOpenDrodpown(`${filter.filterKey}|${val.id}`);
@@ -390,7 +413,15 @@ export default function QueryBuilder({
                       }
                       onInputChange={(e, value, reason) => {
                         if (reason !== 'reset') {
-                          setDropdownInput(value || '');
+                          const inputVal = value || '';
+                          setDropdownInput(inputVal);
+                          if (_isEmpty(inputVal)) {
+                            handleFilterValueChange(
+                              filter.filterKey,
+                              val.id,
+                              inputVal,
+                            );
+                          }
                         }
                       }}
                       getOptionSelected={(option, value) =>
@@ -453,13 +484,15 @@ export default function QueryBuilder({
                   </div>
                 </React.Fragment>
               ))}
-              <div
-                className="add-filter-value"
-                onClick={() => addFilterValue(filter.filterKey)}
-                role="presentation"
-              >
-                <AddCircleOutlineIcon />
-              </div>
+              {filter.multipleValuesAllowed && (
+                <div
+                  className="add-filter-value"
+                  onClick={() => addFilterValue(filter.filterKey)}
+                  role="presentation"
+                >
+                  <AddCircleOutlineIcon />
+                </div>
+              )}
             </div>
           )}
           {filter.filterType === FILTER_TYPE.TEXT && (
@@ -578,16 +611,19 @@ export default function QueryBuilder({
               onClick={() => {
                 setQueryJson({});
                 setAppliedFilters([]);
-                const defaultName = queryName && queryName.defaultValue;
+                const defaultName = queryName && queryName.defaultQueryName;
                 // setSearchQueryName(defaultName);
                 if (queryName && queryName.onChange) {
                   queryName.onChange(defaultName);
                 }
                 setErrors({});
+                if (onReset) {
+                  onReset();
+                }
               }}
               startIcon={<ClearAllIcon />}
             >
-              Clear All
+              Reset
             </Button>
           )}
         </div>
@@ -660,11 +696,14 @@ QueryBuilder.propTypes = {
     key: PropTypes.string.isRequired,
     defaultValue: PropTypes.string.isRequired,
     onChange: PropTypes.func.isRequired,
+    defaultQueryName: PropTypes.string.isRequired,
   }),
   saveQueryAsGlobal: PropTypes.shape({
     key: PropTypes.string.isRequired,
     value: PropTypes.bool.isRequired,
     onChange: PropTypes.func.isRequired,
   }),
+  onReset: PropTypes.func,
+  defaultQueryJson: PropTypes.object,
   // staticConfig: PropTypes.array,
 };

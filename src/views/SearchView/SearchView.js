@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useSetRecoilState, useRecoilValue } from 'recoil';
+import { useSetRecoilState, useRecoilValue, useRecoilState } from 'recoil';
 import { makeStyles } from '@material-ui/core/styles';
 import _get from 'lodash/get';
 import _isEmpty from 'lodash/isEmpty';
+import _cloneDeep from 'lodash/cloneDeep';
 import Accordion from '@material-ui/core/Accordion';
 import AccordionDetails from '@material-ui/core/AccordionDetails';
 import AccordionSummary from '@material-ui/core/AccordionSummary';
@@ -18,6 +19,7 @@ import {
   isLoadingState,
   notificationAlertState,
   viewerSessionState,
+  queryToLoadState,
 } from '../../state';
 import './SearchView.scss';
 
@@ -46,6 +48,7 @@ export default function SearchView() {
   const setLoading = useSetRecoilState(isLoadingState);
   const setNotificationAlert = useSetRecoilState(notificationAlertState);
   const viewerSession = useRecoilValue(viewerSessionState);
+  const [queryToLoad, setQueryToLoad] = useRecoilState(queryToLoadState);
 
   const currentDt = new Date();
   const uniqueQueryName = useRef(
@@ -69,6 +72,7 @@ export default function SearchView() {
     ACCORDION_PANEL.QUERY_BUILDER,
   );
   const [saveQueryAsGlobal, setSaveQueryAsGlobal] = useState(false);
+  const [preloadedQueryJson, setPreloadedQueryJson] = useState();
 
   const qbConfig = [
     {
@@ -233,6 +237,42 @@ export default function SearchView() {
     );
   }, [viewerSession]);
 
+  useEffect(() => {
+    if (queryToLoad) {
+      setQueryName(queryToLoad.query_name);
+      setSaveQueryAsGlobal(queryToLoad.global);
+      const transformedQueryJson = _cloneDeep(queryToLoad.query_hash);
+      if (
+        transformedQueryJson.ServiceGroupsContainer &&
+        transformedQueryJson.ServiceGroupsContainer.length > 0
+      ) {
+        const listAndGuides = transformedQueryJson.ServiceGroupsContainer.find(
+          (sg) => sg.value === 'Lists & Guides',
+        );
+        if (listAndGuides) {
+          transformedQueryJson.ServiceGroupsContainer.splice(
+            transformedQueryJson.ServiceGroupsContainer.indexOf(listAndGuides),
+            1,
+          );
+          if (transformedQueryJson.ServiceGroupsContainer.length === 0) {
+            delete transformedQueryJson.ServiceGroupsContainer;
+          }
+          transformedQueryJson.List_Guides = listAndGuides.modifier === 'False';
+        }
+      }
+      Object.keys(transformedQueryJson).forEach((fk) => {
+        if (Array.isArray(transformedQueryJson[fk])) {
+          transformedQueryJson[fk].forEach((val, idx) => {
+            val.id = idx + 1;
+          });
+        }
+      });
+      setPreloadedQueryJson(transformedQueryJson);
+    } else {
+      setPreloadedQueryJson();
+    }
+  }, [queryToLoad]);
+
   return (
     <div className="search-view-container">
       <Accordion
@@ -270,14 +310,16 @@ export default function SearchView() {
                 // defaultValue: uniqueQueryName.current,
                 defaultValue: queryName,
                 onChange: (val) => setQueryName(val),
+                defaultQueryName: uniqueQueryName.current,
               }}
               saveQueryAsGlobal={{
                 key: 'global_query',
                 value: saveQueryAsGlobal,
                 onChange: (val) => setSaveQueryAsGlobal(val),
               }}
+              onReset={() => setQueryToLoad()}
               // staticConfig={qbStaticConfig}
-              // value={preloadedVal}
+              defaultQueryJson={preloadedQueryJson}
             />
           </div>
         </AccordionDetails>

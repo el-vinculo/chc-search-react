@@ -19,3 +19,8 @@ export const showUserLoginState = atom({
   key: 'showUserLoginState',
   default: false,
 });
+
+export const queryToLoadState = atom({
+  key: 'queryToLoadState',
+  default: null,
+});

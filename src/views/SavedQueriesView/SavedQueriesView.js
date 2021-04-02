@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSetRecoilState, useRecoilValue } from 'recoil';
+import { useHistory } from 'react-router-dom';
 import { makeStyles } from '@material-ui/core/styles';
 import _isEmpty from 'lodash/isEmpty';
 import Typography from '@material-ui/core/Typography';
@@ -21,6 +22,7 @@ import {
   isLoadingState,
   notificationAlertState,
   viewerSessionState,
+  queryToLoadState,
 } from '../../state';
 import './SavedQueriesView.scss';
 
@@ -83,13 +85,15 @@ const ROWS_PER_PAGE = 10;
 
 export default function SavedQueriesView() {
   const classes = useStyles();
-  const [page, setPage] = useState(0);
+  const history = useHistory();
 
   const setLoading = useSetRecoilState(isLoadingState);
   const setNotificationAlert = useSetRecoilState(notificationAlertState);
   const viewerSession = useRecoilValue(viewerSessionState);
+  const setQueryToLoad = useSetRecoilState(queryToLoadState);
 
   const [savedQueries, setSavedQueries] = useState([]);
+  const [page, setPage] = useState(0);
 
   useEffect(() => {
     const fetchSavedQueries = async () => {
@@ -174,7 +178,10 @@ export default function SavedQueriesView() {
                               <Button
                                 variant="contained"
                                 color="primary"
-                                onClick={() => {}}
+                                onClick={() => {
+                                  setQueryToLoad(row);
+                                  history.push('/');
+                                }}
                                 startIcon={<VisibilityIcon />}
                               >
                                 View
