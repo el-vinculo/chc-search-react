@@ -3,6 +3,7 @@
   .MuiFormHelperText-root.Mui-error {
     position: absolute;
     top: 100%;
+    margin-left: 8px;
   }
 
   .filter-group {
@@ -75,6 +76,22 @@
 
     .filter-text-value, .filter-switch {
       margin-bottom: 1.5rem;
+    }
+
+    .filter-key-value {
+      margin-bottom: 1.5rem;
+
+      .filter-value {
+        display: flex;
+      }
+
+      .filter-value-key {
+        padding: 0 1rem;
+      }
+
+      .MuiFormHelperText-root.Mui-error {
+        top: 40px;
+      }
     }
   }
 

@@ -76,6 +76,37 @@ export default function SearchView() {
 
   const qbConfig = [
     {
+      filterKey: 'GeoScope',
+      filterLabel: 'Location',
+      filterType: FILTER_TYPE.KEY_VALUE,
+      keyOptions: [
+        {
+          key: 'Zipcode',
+          label: 'ZIP Code',
+          regex: /^\d{5}$/,
+          regexErrorMessage: 'Please enter a 5-digit ZIP Code',
+        },
+        {
+          key: 'City',
+          label: 'City',
+        },
+        {
+          key: 'State',
+          label: 'State',
+        },
+        {
+          key: 'County',
+          label: 'County',
+        },
+        {
+          key: 'National',
+          label: 'National',
+          nonChangeableValue: '',
+        },
+      ],
+      multipleValuesAllowed: false,
+    },
+    {
       filterKey: 'PopGroupContainer',
       filterLabel: 'Population Groups Container',
       filterType: FILTER_TYPE.DROPDOWN,

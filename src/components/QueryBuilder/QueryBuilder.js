@@ -10,6 +10,7 @@ import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
 import TextField from '@material-ui/core/TextField';
+import FormHelperText from '@material-ui/core/FormHelperText';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import CircularProgress from '@material-ui/core/CircularProgress';
@@ -77,21 +78,39 @@ export default function QueryBuilder({
     setAnchorEl(null);
   };
 
+  const initialFilterValue = (filterCategory) => {
+    switch (filterCategory.filterType) {
+      case FILTER_TYPE.DROPDOWN: {
+        return [
+          {
+            id: 1,
+            value: '',
+            modifier: MODIFIER.DEFAULT,
+            connector: '',
+          },
+        ];
+      }
+      case FILTER_TYPE.TEXT:
+      case FILTER_TYPE.SWITCH: {
+        return filterCategory.value;
+      }
+      case FILTER_TYPE.KEY_VALUE: {
+        return {
+          value: '',
+          type: filterCategory.keyOptions[0].key,
+        };
+      }
+      default:
+        return null;
+    }
+  };
+
   const addFilterCategory = (category) => {
     setAppliedFilters([...appliedFilters, category]);
+
     setQueryJson((prev) => ({
       ...prev,
-      [category.filterKey]:
-        category.filterType === FILTER_TYPE.DROPDOWN
-          ? [
-              {
-                id: 1,
-                value: '',
-                modifier: MODIFIER.DEFAULT,
-                connector: '',
-              },
-            ]
-          : category.value,
+      [category.filterKey]: initialFilterValue(category),
     }));
     handleAddFilterCategoryClose();
   };
@@ -153,10 +172,15 @@ export default function QueryBuilder({
     }));
   };
 
-  const handleFilterValueChange = (filterKey, idx, filterValue) => {
+  const handleFilterValueChange = (
+    filterKey,
+    idx,
+    filterValue,
+    valueKey = 'value',
+  ) => {
     const updatedFilterValues = [...queryJson[filterKey]];
     const valObj = _find(updatedFilterValues, { id: idx });
-    valObj.value = filterValue || '';
+    valObj[valueKey] = filterValue || '';
 
     setErrors((prev) => ({
       ...prev,
@@ -256,6 +280,26 @@ export default function QueryBuilder({
             }
             requestFilters[filterKey].push(filterValObj);
           });
+        } else if (
+          queryJson[filterKey] &&
+          !_isEmpty(queryJson[filterKey].type)
+        ) {
+          const keyConfig = filterConfig.keyOptions.find(
+            (k) => k.key === queryJson[filterKey].type,
+          );
+          if (
+            !('nonChangeableValue' in keyConfig) &&
+            _isEmpty(queryJson[filterKey].value)
+          ) {
+            validationErrors[filterKey] = true;
+          } else if (
+            'regex' in keyConfig &&
+            !keyConfig.regex.test(queryJson[filterKey].value)
+          ) {
+            validationErrors[filterKey] = keyConfig.regexErrorMessage;
+          } else {
+            requestFilters[filterKey] = queryJson[filterKey];
+          }
         } else {
           if (_isEmpty(queryJson[filterKey])) {
             validationErrors[filterKey] = true;
@@ -519,6 +563,83 @@ export default function QueryBuilder({
                   }));
                 }}
               />
+            </div>
+          )}
+          {filter.filterType === FILTER_TYPE.KEY_VALUE && (
+            <div className="filter-key-value">
+              <div className="filter-value">
+                <div className="filter-value-key">
+                  <Select
+                    value={queryJson[filter.filterKey].type}
+                    style={{ width: '100px' }}
+                    onChange={(e) => {
+                      const keyConfigObj = filter.keyOptions.find(
+                        (k) => k.key === e.target.value,
+                      );
+                      setQueryJson((prev) => ({
+                        ...prev,
+                        [filter.filterKey]: {
+                          type: e.target.value,
+                          value:
+                            'nonChangeableValue' in keyConfigObj
+                              ? keyConfigObj.nonChangeableValue
+                              : prev[filter.filterKey].value,
+                        },
+                      }));
+                      setErrors((prev) => ({
+                        ...prev,
+                        [filter.filterKey]: false,
+                      }));
+                    }}
+                    // displayEmpty
+                    // className={classes.selectEmpty}
+                  >
+                    {filter.keyOptions.map((opt) => (
+                      <MenuItem value={opt.key} key={opt.key}>
+                        {opt.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  <FormHelperText>Location Type</FormHelperText>
+                </div>
+                {!(
+                  'nonChangeableValue' in
+                  filter.keyOptions.find(
+                    (k) => k.key === queryJson[filter.filterKey].type,
+                  )
+                ) && (
+                  <TextField
+                    id={`${filter.filterKey}`}
+                    placeholder="Enter..."
+                    variant="outlined"
+                    style={{
+                      width: 225,
+                    }}
+                    size="small"
+                    value={queryJson[filter.filterKey].value}
+                    error={errors[`${filter.filterKey}`]}
+                    helperText={
+                      errors[`${filter.filterKey}`] &&
+                      (typeof errors[`${filter.filterKey}`] === 'string'
+                        ? errors[`${filter.filterKey}`]
+                        : 'Please enter a value')
+                    }
+                    onChange={(e) => {
+                      setQueryJson((prev) => ({
+                        ...prev,
+                        [filter.filterKey]: {
+                          ...prev[filter.filterKey],
+                          value: e.target.value,
+                        },
+                      }));
+                      setErrors((prev) => ({
+                        ...prev,
+                        [filter.filterKey]: false,
+                      }));
+                    }}
+                  />
+                )}
+              </div>
             </div>
           )}
           {filter.filterType === FILTER_TYPE.SWITCH && (
