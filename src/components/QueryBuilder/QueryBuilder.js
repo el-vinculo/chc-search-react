@@ -112,6 +112,11 @@ export default function QueryBuilder({
       ...prev,
       [category.filterKey]: initialFilterValue(category),
     }));
+    setTimeout(() => {
+      if (document.querySelector(`#${category.filterKey}`)) {
+        document.querySelector(`#${category.filterKey}`).focus();
+      }
+    });
     handleAddFilterCategoryClose();
   };
 
@@ -298,7 +303,11 @@ export default function QueryBuilder({
           ) {
             validationErrors[filterKey] = keyConfig.regexErrorMessage;
           } else {
-            requestFilters[filterKey] = queryJson[filterKey];
+            const filterVal = { ...queryJson[filterKey] };
+            if (filterVal.type === 'EMPTY') {
+              filterVal.type = '';
+            }
+            requestFilters[filterKey] = filterVal;
           }
         } else {
           if (_isEmpty(queryJson[filterKey])) {
@@ -583,7 +592,8 @@ export default function QueryBuilder({
                           value:
                             'nonChangeableValue' in keyConfigObj
                               ? keyConfigObj.nonChangeableValue
-                              : prev[filter.filterKey].value,
+                              : // : prev[filter.filterKey].value,
+                                '',
                         },
                       }));
                       setErrors((prev) => ({

@@ -11,6 +11,11 @@ import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TablePagination from '@material-ui/core/TablePagination';
+import Dialog from '@material-ui/core/Dialog';
+import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogContentText from '@material-ui/core/DialogContentText';
+import DialogTitle from '@material-ui/core/DialogTitle';
 import TableRow from '@material-ui/core/TableRow';
 import Button from '@material-ui/core/Button';
 import VisibilityIcon from '@material-ui/icons/Visibility';
@@ -94,6 +99,8 @@ export default function SavedQueriesView() {
 
   const [savedQueries, setSavedQueries] = useState([]);
   const [page, setPage] = useState(0);
+  const [openDeleteConfirmation, setOpenDeleteConfirmation] = useState(false);
+  const [queryToDelete, setQuertToDelete] = useState();
 
   useEffect(() => {
     const fetchSavedQueries = async () => {
@@ -132,6 +139,48 @@ export default function SavedQueriesView() {
     setPage(newPage);
   };
 
+  const handleQueryDeletion = async (savedQuery) => {
+    if (_isEmpty(viewerSession)) {
+      setNotificationAlert({
+        type: 'error',
+        msg: 'Please login and try again',
+      });
+      return;
+    }
+    setOpenDeleteConfirmation(false);
+    try {
+      setLoading(true);
+      await httpRequest({
+        method: 'post',
+        endpoint: API.DELETE_SAVED_QUERY,
+        data: {
+          email: viewerSession.email,
+          query_id: savedQuery.id,
+        },
+      });
+      setLoading(false);
+      setNotificationAlert({
+        type: 'success',
+        msg: 'Query deleted successfully',
+      });
+      const updatedSavedQueries = [...savedQueries];
+      updatedSavedQueries.splice(updatedSavedQueries.indexOf(savedQuery), 1);
+      setSavedQueries(updatedSavedQueries);
+    } catch (err) {
+      console.error('Error calling API', err);
+      setNotificationAlert({
+        type: 'error',
+        msg: 'Error deleting saved query',
+      });
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteConfirmationClose = () => {
+    setQuertToDelete();
+    setOpenDeleteConfirmation(false);
+  };
+
   return (
     <div className="saved-queries-container">
       <Typography variant="h3" className={classes.title}>
@@ -161,11 +210,7 @@ export default function SavedQueriesView() {
                   page * ROWS_PER_PAGE + ROWS_PER_PAGE,
                 )
                 .map((row) => (
-                  <TableRow
-                    hover
-                    tabIndex={-1}
-                    key={row.query_name + JSON.stringify(row.query_hash)}
-                  >
+                  <TableRow hover tabIndex={-1} key={row.id}>
                     {COLUMNS_CONFIG.map((column) => {
                       const value = row[column.id];
                       return (
@@ -189,7 +234,10 @@ export default function SavedQueriesView() {
                               <Button
                                 variant="outlined"
                                 color="secondary"
-                                onClick={() => {}}
+                                onClick={() => {
+                                  setQuertToDelete(row);
+                                  setOpenDeleteConfirmation(true);
+                                }}
                                 startIcon={<DeleteIcon />}
                                 style={{
                                   marginLeft: '0.5rem',
@@ -216,6 +264,31 @@ export default function SavedQueriesView() {
           onChangePage={handleChangePage}
         />
       </Paper>
+      <Dialog
+        open={openDeleteConfirmation}
+        onClose={handleDeleteConfirmationClose}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">Confirm Deletion</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Are you sure you want to delete this query?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteConfirmationClose} color="primary">
+            Cancel
+          </Button>
+          <Button
+            onClick={() => handleQueryDeletion(queryToDelete)}
+            color="primary"
+            autoFocus
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 }

@@ -8,6 +8,8 @@ import Accordion from '@material-ui/core/Accordion';
 import AccordionDetails from '@material-ui/core/AccordionDetails';
 import AccordionSummary from '@material-ui/core/AccordionSummary';
 import Typography from '@material-ui/core/Typography';
+import Tabs from '@material-ui/core/Tabs';
+import Tab from '@material-ui/core/Tab';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 
 import QueryBuilder from '../../components/QueryBuilder';
@@ -68,11 +70,13 @@ export default function SearchView() {
 
   const [queryName, setQueryName] = useState(uniqueQueryName.current);
   const [searchResults, setSearchResults] = useState();
+  const [tabResults, setTabResults] = useState([]);
   const [expandedPanel, setExpandedPanel] = useState(
     ACCORDION_PANEL.QUERY_BUILDER,
   );
   const [saveQueryAsGlobal, setSaveQueryAsGlobal] = useState(false);
   const [preloadedQueryJson, setPreloadedQueryJson] = useState();
+  const [resultTab, setResultTab] = React.useState(0);
 
   const qbConfig = [
     {
@@ -99,9 +103,9 @@ export default function SearchView() {
           label: 'County',
         },
         {
-          key: 'National',
+          key: 'EMPTY',
           label: 'National',
-          nonChangeableValue: '',
+          nonChangeableValue: 'National',
         },
       ],
       multipleValuesAllowed: false,
@@ -236,6 +240,18 @@ export default function SearchView() {
       setLoading(false);
       setExpandedPanel(ACCORDION_PANEL.SEARCH_RESULTS);
       setSearchResults(response.data);
+      if (!Array.isArray(response.data.complete_result)) {
+        const resultKeys = Object.keys(response.data.complete_result);
+        let tabResult = null;
+        resultKeys.forEach((k) => {
+          if (!tabResult && Array.isArray(response.data.complete_result[k])) {
+            tabResult = response.data.complete_result[k];
+          }
+        });
+        if (tabResult) {
+          setTabResults(tabResult);
+        }
+      }
     } catch (err) {
       console.error('Error calling API', err);
       setNotificationAlert({
@@ -304,6 +320,19 @@ export default function SearchView() {
     }
   }, [queryToLoad]);
 
+  const handleResultTabChange = (event, newValue) => {
+    event.stopPropagation();
+    setResultTab(newValue);
+    const tabKeys = Object.keys(searchResults.complete_result);
+    const tabsData = [];
+    tabKeys.forEach((k) => {
+      if (Array.isArray(searchResults.complete_result[k])) {
+        tabsData.push(searchResults.complete_result[k]);
+      }
+    });
+    setTabResults(tabsData[newValue]);
+  };
+
   return (
     <div className="search-view-container">
       <Accordion
@@ -366,9 +395,35 @@ export default function SearchView() {
             id="search_results-header"
           >
             <Typography className={classes.heading}>Search Results</Typography>
-            <Typography className={classes.secondaryHeading}>
-              {searchResults.result_count} Found
-            </Typography>
+            {Array.isArray(searchResults.complete_result) && (
+              <Typography className={classes.secondaryHeading}>
+                {searchResults.result_count} Found
+              </Typography>
+            )}
+            {!Array.isArray(searchResults.complete_result) && (
+              <div className="tabs-wrap">
+                <Tabs
+                  value={resultTab}
+                  onChange={handleResultTabChange}
+                  aria-label="result tabs"
+                  indicatorColor="primary"
+                >
+                  {Object.keys(searchResults.complete_result).map((k) => {
+                    if (Array.isArray(searchResults.complete_result[k])) {
+                      return (
+                        <Tab
+                          label={`${k} (${
+                            searchResults.complete_result[`${k}_count`]
+                          })`}
+                          key={k}
+                        />
+                      );
+                    }
+                    return null;
+                  })}
+                </Tabs>
+              </div>
+            )}
           </AccordionSummary>
           <AccordionDetails>
             <div
@@ -380,7 +435,13 @@ export default function SearchView() {
                     : 'none',
               }}
             >
-              <SearchResults data={searchResults.complete_result} />
+              <SearchResults
+                data={
+                  !Array.isArray(searchResults.complete_result)
+                    ? tabResults
+                    : searchResults.complete_result
+                }
+              />
             </div>
           </AccordionDetails>
         </Accordion>

@@ -2,4 +2,19 @@
   .query-builder-wrapper, .search-results-wrapper {
     width: 100%;
   }
+
+  .tabs-wrap {
+    /* margin-left: 1rem; */
+
+    .MuiTabs-root {
+      min-height: 24px;
+    }
+
+    button.MuiButtonBase-root.MuiTab-root {
+      min-height: 24px;
+      padding: 0 1rem 0.25rem;
+      font-size: 0.75rem;
+      min-width: unset;
+    }
+  }
 }
