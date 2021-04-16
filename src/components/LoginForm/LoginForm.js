@@ -99,17 +99,21 @@ export default function LoginForm() {
           // },
         });
 
-        const userAccess = {
-          token: response.data.authentication_token,
-          email: response.data.email,
-        };
-        setUserSession(userAccess);
-        localStorage.setItem('userSession', JSON.stringify(userAccess));
-        setShowUserLogin(false);
-        setNotificationAlert({
-          type: 'success',
-          msg: 'User logged in',
-        });
+        if (response.data.authentication_token && response.data.email) {
+          const userAccess = {
+            token: response.data.authentication_token,
+            email: response.data.email,
+          };
+          setUserSession(userAccess);
+          localStorage.setItem('userSession', JSON.stringify(userAccess));
+          setShowUserLogin(false);
+          setNotificationAlert({
+            type: 'success',
+            msg: 'User logged in',
+          });
+        } else {
+          throw new Error('User deactivated');
+        }
         setLoading(false);
       } catch (err) {
         console.error('API Call Failed: ', err);
