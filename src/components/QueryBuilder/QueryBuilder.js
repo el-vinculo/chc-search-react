@@ -63,12 +63,46 @@ export default function QueryBuilder({
       );
       setErrors({});
     } else {
-      setQueryJson({});
-      setAppliedFilters([]);
+      const preloadFilters = config.filter((fk) => fk.preload);
+      setAppliedFilters(preloadFilters);
+      const preloadQueryJson = {};
+      preloadFilters.forEach((pf) => {
+        preloadQueryJson[pf.filterKey] = initialFilterValue(pf);
+        setTimeout(() => {
+          if (document.querySelector(`#${pf.filterKey}`)) {
+            document.querySelector(`#${pf.filterKey}`).focus();
+          }
+        }, 100);
+      });
+      setQueryJson(preloadQueryJson);
       setErrors({});
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultQueryJson]);
+
+  const handleQueryReset = () => {
+    const preloadFilters = config.filter((fk) => fk.preload);
+    setAppliedFilters(preloadFilters);
+    const preloadQueryJson = {};
+    preloadFilters.forEach((pf) => {
+      preloadQueryJson[pf.filterKey] = initialFilterValue(pf);
+      setTimeout(() => {
+        if (document.querySelector(`#${pf.filterKey}`)) {
+          document.querySelector(`#${pf.filterKey}`).focus();
+        }
+      }, 100);
+    });
+    setQueryJson(preloadQueryJson);
+    const defaultName = queryName && queryName.defaultQueryName;
+    // setSearchQueryName(defaultName);
+    if (queryName && queryName.onChange) {
+      queryName.onChange(defaultName);
+    }
+    setErrors({});
+    if (onReset) {
+      onReset();
+    }
+  };
 
   const handleAddFilterCategoryClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -376,300 +410,313 @@ export default function QueryBuilder({
 
   return (
     <div className="query-builder-container">
-      {appliedFilters.map((filter, i) => (
-        <div className="filter-group" key={filter.filterKey}>
-          <div
-            className="remove-filter"
-            onClick={() => removeFilterCategory(filter.filterKey)}
-            role="presentation"
-          >
-            <RemoveCircleIcon color="error" />
-          </div>
-          <div className="filter-category-join">
-            {i > 0
-              ? joinsAllowedBetweenFilters.length === 1 &&
-                joinsAllowedBetweenFilters[0]
-              : ''}
-          </div>
-          <div className="filter-label">{filter.filterLabel}</div>
-          {filter.filterType === FILTER_TYPE.DROPDOWN && (
-            <div className="filter-values-wrap">
-              {queryJson[filter.filterKey].map((val, idx) => (
-                <React.Fragment key={val.id}>
-                  {idx > 0 && (
-                    <div className="filter-connector">
-                      <Select
-                        // value={queryJson[filter.filterKey][idx - 1].connector}
-                        value={
-                          val.connector === AND && val.modifier === MODIFIER.NOT
-                            ? AND_NOT
-                            : val.connector
-                        }
-                        onChange={(e) =>
-                          handleConnectorChange(
-                            filter.filterKey,
-                            val.id,
-                            e.target.value,
-                          )
-                        }
-                        displayEmpty
-                        // className={classes.selectEmpty}
-                      >
-                        {filter.joinsAllowedBetweenValues.map((join) => (
-                          <MenuItem value={join} key={join}>
-                            {join.toUpperCase()}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </div>
-                  )}
-                  <div className="filter-value">
-                    {filter.multipleValuesAllowed && (
-                      <div
-                        className="filter-value-remove"
-                        onClick={() =>
-                          removeFilterValue(filter.filterKey, val.id)
-                        }
-                        role="presentation"
-                      >
-                        <HighlightOffIcon color="error" />
-                      </div>
-                    )}
-                    <Autocomplete
-                      id={`${filter.filterKey}|${val.id}`}
-                      style={{ width: 200 }}
-                      size="small"
-                      // autoComplete
-                      autoHighlight
-                      autoSelect
-                      open={openDropdown === `${filter.filterKey}|${val.id}`}
-                      onOpen={() => {
-                        setOpenDrodpown(`${filter.filterKey}|${val.id}`);
-                        setDropdownInput(val.value);
-                      }}
-                      onClose={() => {
-                        setOpenDrodpown(false);
-                      }}
-                      onChange={(e, value) => {
-                        handleFilterValueChange(
-                          filter.filterKey,
-                          val.id,
-                          value,
-                        );
-                      }}
-                      inputValue={
-                        !_isEmpty(dropdownInput) &&
-                        openDropdown === `${filter.filterKey}|${val.id}`
-                          ? dropdownInput
-                          : val.value
-                        // val.value
-                      }
-                      onInputChange={(e, value, reason) => {
-                        if (reason !== 'reset') {
-                          const inputVal = value || '';
-                          setDropdownInput(inputVal);
-                          if (_isEmpty(inputVal)) {
+      {appliedFilters.map(
+        (filter, i) =>
+          filter.filterKey in queryJson && (
+            <div className="filter-group" key={filter.filterKey}>
+              <div
+                className="remove-filter"
+                onClick={() => removeFilterCategory(filter.filterKey)}
+                role="presentation"
+              >
+                <RemoveCircleIcon color="error" />
+              </div>
+              <div className="filter-category-join">
+                {i > 0
+                  ? joinsAllowedBetweenFilters.length === 1 &&
+                    joinsAllowedBetweenFilters[0]
+                  : ''}
+              </div>
+              <div className="filter-label">{filter.filterLabel}</div>
+              {filter.filterType === FILTER_TYPE.DROPDOWN && (
+                <div className="filter-values-wrap">
+                  {queryJson[filter.filterKey].map((val, idx) => (
+                    <React.Fragment key={val.id}>
+                      {idx > 0 && (
+                        <div className="filter-connector">
+                          <Select
+                            // value={queryJson[filter.filterKey][idx - 1].connector}
+                            value={
+                              val.connector === AND &&
+                              val.modifier === MODIFIER.NOT
+                                ? AND_NOT
+                                : val.connector
+                            }
+                            onChange={(e) =>
+                              handleConnectorChange(
+                                filter.filterKey,
+                                val.id,
+                                e.target.value,
+                              )
+                            }
+                            displayEmpty
+                            // className={classes.selectEmpty}
+                          >
+                            {filter.joinsAllowedBetweenValues.map((join) => (
+                              <MenuItem value={join} key={join}>
+                                {join.toUpperCase()}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </div>
+                      )}
+                      <div className="filter-value">
+                        {filter.multipleValuesAllowed && (
+                          <div
+                            className="filter-value-remove"
+                            onClick={() =>
+                              removeFilterValue(filter.filterKey, val.id)
+                            }
+                            role="presentation"
+                          >
+                            <HighlightOffIcon color="error" />
+                          </div>
+                        )}
+                        <Autocomplete
+                          id={`${filter.filterKey}|${val.id}`}
+                          style={{ width: 200 }}
+                          size="small"
+                          // autoComplete
+                          autoHighlight
+                          autoSelect
+                          open={
+                            openDropdown === `${filter.filterKey}|${val.id}`
+                          }
+                          onOpen={() => {
+                            setOpenDrodpown(`${filter.filterKey}|${val.id}`);
+                            setDropdownInput(val.value);
+                          }}
+                          onClose={() => {
+                            setOpenDrodpown(false);
+                          }}
+                          onChange={(e, value) => {
                             handleFilterValueChange(
                               filter.filterKey,
                               val.id,
-                              inputVal,
+                              value,
                             );
-                          }
-                        }
-                      }}
-                      getOptionSelected={(option, value) =>
-                        // option.name === value.name
-                        option === value
-                      }
-                      // getOptionLabel={(option) => option.name}
-                      options={
-                        dropdownOptions
-                          ? dropdownOptions.filter(
-                              (opt) =>
-                                !queryJson[filter.filterKey]
-                                  .map(
-                                    (fVal) =>
-                                      fVal.value !== val.value && fVal.value,
-                                  )
-                                  .includes(opt),
-                            )
-                          : []
-                      }
-                      // options={dropdownOptions}
-                      loading={
-                        dropdownLoading &&
-                        openDropdown === `${filter.filterKey}|${val.id}` &&
-                        dropdownInput.length >=
-                          appliedFilters.find(
-                            (af) => af.filterKey === filter.filterKey,
-                          ).minCharsToFilter
-                      }
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          placeholder="Select/Search..."
-                          variant="outlined"
-                          error={errors[`${filter.filterKey}|${val.id}`]}
-                          helperText={
-                            errors[`${filter.filterKey}|${val.id}`] &&
-                            'Please select a value'
-                          }
-                          InputProps={{
-                            ...params.InputProps,
-                            endAdornment: (
-                              <React.Fragment>
-                                {dropdownLoading &&
-                                openDropdown ===
-                                  `${filter.filterKey}|${val.id}` &&
-                                dropdownInput.length >=
-                                  appliedFilters.find(
-                                    (af) => af.filterKey === filter.filterKey,
-                                  ).minCharsToFilter ? (
-                                  <CircularProgress color="inherit" size={20} />
-                                ) : null}
-                                {params.InputProps.endAdornment}
-                              </React.Fragment>
-                            ),
                           }}
+                          inputValue={
+                            !_isEmpty(dropdownInput) &&
+                            openDropdown === `${filter.filterKey}|${val.id}`
+                              ? dropdownInput
+                              : val.value
+                            // val.value
+                          }
+                          onInputChange={(e, value, reason) => {
+                            if (reason !== 'reset') {
+                              const inputVal = value || '';
+                              setDropdownInput(inputVal);
+                              if (_isEmpty(inputVal)) {
+                                handleFilterValueChange(
+                                  filter.filterKey,
+                                  val.id,
+                                  inputVal,
+                                );
+                              }
+                            }
+                          }}
+                          getOptionSelected={(option, value) =>
+                            // option.name === value.name
+                            option === value
+                          }
+                          // getOptionLabel={(option) => option.name}
+                          options={
+                            dropdownOptions
+                              ? dropdownOptions.filter(
+                                  (opt) =>
+                                    !queryJson[filter.filterKey]
+                                      .map(
+                                        (fVal) =>
+                                          fVal.value !== val.value &&
+                                          fVal.value,
+                                      )
+                                      .includes(opt),
+                                )
+                              : []
+                          }
+                          // options={dropdownOptions}
+                          loading={
+                            dropdownLoading &&
+                            openDropdown === `${filter.filterKey}|${val.id}` &&
+                            dropdownInput.length >=
+                              appliedFilters.find(
+                                (af) => af.filterKey === filter.filterKey,
+                              ).minCharsToFilter
+                          }
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              placeholder="Select/Search..."
+                              variant="outlined"
+                              error={errors[`${filter.filterKey}|${val.id}`]}
+                              helperText={
+                                errors[`${filter.filterKey}|${val.id}`] &&
+                                'Please select a value'
+                              }
+                              InputProps={{
+                                ...params.InputProps,
+                                endAdornment: (
+                                  <React.Fragment>
+                                    {dropdownLoading &&
+                                    openDropdown ===
+                                      `${filter.filterKey}|${val.id}` &&
+                                    dropdownInput.length >=
+                                      appliedFilters.find(
+                                        (af) =>
+                                          af.filterKey === filter.filterKey,
+                                      ).minCharsToFilter ? (
+                                      <CircularProgress
+                                        color="inherit"
+                                        size={20}
+                                      />
+                                    ) : null}
+                                    {params.InputProps.endAdornment}
+                                  </React.Fragment>
+                                ),
+                              }}
+                            />
+                          )}
                         />
-                      )}
-                    />
-                  </div>
-                </React.Fragment>
-              ))}
-              {filter.multipleValuesAllowed && (
-                <div
-                  className="add-filter-value"
-                  onClick={() => addFilterValue(filter.filterKey)}
-                  role="presentation"
-                >
-                  <AddCircleOutlineIcon />
+                      </div>
+                    </React.Fragment>
+                  ))}
+                  {filter.multipleValuesAllowed && (
+                    <div
+                      className="add-filter-value"
+                      onClick={() => addFilterValue(filter.filterKey)}
+                      role="presentation"
+                    >
+                      <AddCircleOutlineIcon />
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          )}
-          {filter.filterType === FILTER_TYPE.TEXT && (
-            <div className="filter-text-value">
-              <TextField
-                id={filter.filterKey}
-                placeholder="Enter..."
-                variant="outlined"
-                style={{
-                  width: 300,
-                }}
-                size="small"
-                value={queryJson[filter.filterKey]}
-                error={errors[filter.filterKey]}
-                helperText={errors[filter.filterKey] && 'Please enter a value'}
-                onChange={(e) => {
-                  setErrors((prev) => ({
-                    ...prev,
-                    [filter.filterKey]: false,
-                  }));
-                  setQueryJson((prev) => ({
-                    ...prev,
-                    [filter.filterKey]: e.target.value,
-                  }));
-                }}
-              />
-            </div>
-          )}
-          {filter.filterType === FILTER_TYPE.KEY_VALUE && (
-            <div className="filter-key-value">
-              <div className="filter-value">
-                <div className="filter-value-key">
-                  <Select
-                    value={queryJson[filter.filterKey].type}
-                    style={{ width: '100px' }}
-                    onChange={(e) => {
-                      const keyConfigObj = filter.keyOptions.find(
-                        (k) => k.key === e.target.value,
-                      );
-                      setQueryJson((prev) => ({
-                        ...prev,
-                        [filter.filterKey]: {
-                          type: e.target.value,
-                          value:
-                            'nonChangeableValue' in keyConfigObj
-                              ? keyConfigObj.nonChangeableValue
-                              : // : prev[filter.filterKey].value,
-                                '',
-                        },
-                      }));
-                      setErrors((prev) => ({
-                        ...prev,
-                        [filter.filterKey]: false,
-                      }));
-                    }}
-                    // displayEmpty
-                    // className={classes.selectEmpty}
-                  >
-                    {filter.keyOptions.map((opt) => (
-                      <MenuItem value={opt.key} key={opt.key}>
-                        {opt.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  <FormHelperText>Location Type</FormHelperText>
-                </div>
-                {!(
-                  'nonChangeableValue' in
-                  filter.keyOptions.find(
-                    (k) => k.key === queryJson[filter.filterKey].type,
-                  )
-                ) && (
+              {filter.filterType === FILTER_TYPE.TEXT && (
+                <div className="filter-text-value">
                   <TextField
-                    id={`${filter.filterKey}`}
+                    id={filter.filterKey}
                     placeholder="Enter..."
                     variant="outlined"
                     style={{
-                      width: 225,
+                      width: 300,
                     }}
                     size="small"
-                    value={queryJson[filter.filterKey].value}
-                    error={errors[`${filter.filterKey}`]}
+                    value={queryJson[filter.filterKey]}
+                    error={errors[filter.filterKey]}
                     helperText={
-                      errors[`${filter.filterKey}`] &&
-                      (typeof errors[`${filter.filterKey}`] === 'string'
-                        ? errors[`${filter.filterKey}`]
-                        : 'Please enter a value')
+                      errors[filter.filterKey] && 'Please enter a value'
                     }
                     onChange={(e) => {
-                      setQueryJson((prev) => ({
-                        ...prev,
-                        [filter.filterKey]: {
-                          ...prev[filter.filterKey],
-                          value: e.target.value,
-                        },
-                      }));
                       setErrors((prev) => ({
                         ...prev,
                         [filter.filterKey]: false,
                       }));
+                      setQueryJson((prev) => ({
+                        ...prev,
+                        [filter.filterKey]: e.target.value,
+                      }));
                     }}
                   />
-                )}
-              </div>
+                </div>
+              )}
+              {filter.filterType === FILTER_TYPE.KEY_VALUE && (
+                <div className="filter-key-value">
+                  <div className="filter-value">
+                    <div className="filter-value-key">
+                      <Select
+                        value={queryJson[filter.filterKey].type}
+                        style={{ width: '100px' }}
+                        onChange={(e) => {
+                          const keyConfigObj = filter.keyOptions.find(
+                            (k) => k.key === e.target.value,
+                          );
+                          setQueryJson((prev) => ({
+                            ...prev,
+                            [filter.filterKey]: {
+                              type: e.target.value,
+                              value:
+                                'nonChangeableValue' in keyConfigObj
+                                  ? keyConfigObj.nonChangeableValue
+                                  : // : prev[filter.filterKey].value,
+                                    '',
+                            },
+                          }));
+                          setErrors((prev) => ({
+                            ...prev,
+                            [filter.filterKey]: false,
+                          }));
+                        }}
+                        // displayEmpty
+                        // className={classes.selectEmpty}
+                      >
+                        {filter.keyOptions.map((opt) => (
+                          <MenuItem value={opt.key} key={opt.key}>
+                            {opt.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      <FormHelperText>Location Type</FormHelperText>
+                    </div>
+                    {!(
+                      'nonChangeableValue' in
+                      filter.keyOptions.find(
+                        (k) => k.key === queryJson[filter.filterKey].type,
+                      )
+                    ) && (
+                      <TextField
+                        id={`${filter.filterKey}`}
+                        placeholder="Enter..."
+                        variant="outlined"
+                        style={{
+                          width: 225,
+                        }}
+                        size="small"
+                        value={queryJson[filter.filterKey].value}
+                        error={errors[`${filter.filterKey}`]}
+                        helperText={
+                          errors[`${filter.filterKey}`] &&
+                          (typeof errors[`${filter.filterKey}`] === 'string'
+                            ? errors[`${filter.filterKey}`]
+                            : 'Please enter a value')
+                        }
+                        onChange={(e) => {
+                          setQueryJson((prev) => ({
+                            ...prev,
+                            [filter.filterKey]: {
+                              ...prev[filter.filterKey],
+                              value: e.target.value,
+                            },
+                          }));
+                          setErrors((prev) => ({
+                            ...prev,
+                            [filter.filterKey]: false,
+                          }));
+                        }}
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
+              {filter.filterType === FILTER_TYPE.SWITCH && (
+                <div className="filter-switch">
+                  <Switch
+                    checked={queryJson[filter.filterKey].value}
+                    onChange={(e) => {
+                      setQueryJson((prev) => ({
+                        ...prev,
+                        [filter.filterKey]: e.target.checked,
+                      }));
+                    }}
+                    color="primary"
+                    name={filter.filterKey}
+                    inputProps={{ 'aria-label': 'primary checkbox' }}
+                  />
+                </div>
+              )}
             </div>
-          )}
-          {filter.filterType === FILTER_TYPE.SWITCH && (
-            <div className="filter-switch">
-              <Switch
-                checked={queryJson[filter.filterKey].value}
-                onChange={(e) => {
-                  setQueryJson((prev) => ({
-                    ...prev,
-                    [filter.filterKey]: e.target.checked,
-                  }));
-                }}
-                color="primary"
-                name={filter.filterKey}
-                inputProps={{ 'aria-label': 'primary checkbox' }}
-              />
-            </div>
-          )}
-        </div>
-      ))}
+          ),
+      )}
       {/* !_isEmpty(queryJson) &&
         qbStaticConfig.map((staticFilter) => (
           <div className="filter-group static" key={staticFilter.filterLabel}>
@@ -739,19 +786,7 @@ export default function QueryBuilder({
               variant="outlined"
               color="secondary"
               // className={classes.button}
-              onClick={() => {
-                setQueryJson({});
-                setAppliedFilters([]);
-                const defaultName = queryName && queryName.defaultQueryName;
-                // setSearchQueryName(defaultName);
-                if (queryName && queryName.onChange) {
-                  queryName.onChange(defaultName);
-                }
-                setErrors({});
-                if (onReset) {
-                  onReset();
-                }
-              }}
+              onClick={handleQueryReset}
               startIcon={<ClearAllIcon />}
             >
               Reset

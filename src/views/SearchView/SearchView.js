@@ -109,6 +109,7 @@ export default function SearchView() {
         },
       ],
       multipleValuesAllowed: false,
+      preload: true,
     },
     {
       filterKey: 'PopGroupContainer',
@@ -181,6 +182,7 @@ export default function SearchView() {
       filterLabel: 'Lists & Guides',
       filterType: FILTER_TYPE.SWITCH,
       value: false,
+      preload: true,
     },
   ];
 
