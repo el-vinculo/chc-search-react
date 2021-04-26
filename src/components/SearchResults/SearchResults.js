@@ -25,10 +25,7 @@ function SearchResults({ data }) {
         {_uniqBy(data, 'id').map((row) => (
           <div
             className={`record-row ${
-              _get(activeRecord, 'Programs.ProgramName') ===
-              row.Programs.ProgramName
-                ? 'active'
-                : ''
+              _get(activeRecord, 'id') === row.id ? 'active' : ''
             }`}
             // key={`${row.Programs.ProgramName}|${row.OrganizationName.OrganizationName[0].Text}`}
             key={row.id}

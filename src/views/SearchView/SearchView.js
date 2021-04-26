@@ -76,7 +76,7 @@ export default function SearchView() {
   );
   const [saveQueryAsGlobal, setSaveQueryAsGlobal] = useState(false);
   const [preloadedQueryJson, setPreloadedQueryJson] = useState();
-  const [resultTab, setResultTab] = React.useState(0);
+  const [resultTab, setResultTab] = useState(0);
 
   const qbConfig = [
     {
@@ -245,13 +245,21 @@ export default function SearchView() {
       if (!Array.isArray(response.data.complete_result)) {
         const resultKeys = Object.keys(response.data.complete_result);
         let tabResult = null;
+        let tabIndex = null;
         resultKeys.forEach((k) => {
           if (!tabResult && Array.isArray(response.data.complete_result[k])) {
-            tabResult = response.data.complete_result[k];
+            tabIndex = tabIndex === null ? 0 : tabIndex + 1;
+            if (response.data.complete_result[k].length > 0) {
+              tabResult = response.data.complete_result[k];
+            }
           }
         });
         if (tabResult) {
+          setResultTab(tabIndex);
           setTabResults(tabResult);
+        } else {
+          setResultTab(0);
+          setTabResults([]);
         }
       }
     } catch (err) {
